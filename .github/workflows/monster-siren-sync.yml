@@ -1,0 +1,26 @@
+name: Monster Siren Records Sync
+
+on:
+  schedule:
+    - cron: '0 1 * * 0'  # Sunday 9am HKT (UTC+8) = Sunday 1am UTC
+  workflow_dispatch:       # Allow manual runs
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Sync Monster Siren Records to playlist
+        run: uv run scripts/sync_monster_siren.py
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SPOTIFY_REFRESH_TOKEN: ${{ secrets.SPOTIFY_REFRESH_TOKEN }}
