@@ -13,18 +13,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Create keepalive commit when due
+      - name: Create keepalive commit
         run: |
-          last_keepalive=$(git log --format=%ct --grep='^chore: keep GitHub Actions active$' -1)
-          now=$(date +%s)
-
-          if [ -n "$last_keepalive" ] && [ $((now - last_keepalive)) -lt 5097600 ]; then
-            exit 0
-          fi
-
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit --allow-empty -m 'chore: keep GitHub Actions active'
