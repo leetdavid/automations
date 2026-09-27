@@ -8,13 +8,15 @@ Usage:
   1. Copy .env.example to .env and fill in SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET
   2. uv run scripts/get_refresh_token.py
   3. A browser window will open — log in and authorize the app
-  4. The refresh token will be printed automatically — save it as SPOTIFY_REFRESH_TOKEN
+   4. The refresh token will be saved to .spotify-refresh-token
 """
 
 import os
+import subprocess
 import urllib.parse
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
@@ -28,6 +30,7 @@ SCOPE = "playlist-modify-public playlist-modify-private"
 
 AUTH_URL = "https://accounts.spotify.com/authorize"
 TOKEN_URL = "https://accounts.spotify.com/api/token"
+REFRESH_TOKEN_FILE = Path(__file__).resolve().parent.parent / ".spotify-refresh-token"
 
 # Will be set by the callback handler
 _auth_code: str | None = None
@@ -95,9 +98,19 @@ def main() -> None:
         raise SystemExit(1)
 
     tokens = exchange_code_for_tokens(_auth_code)
+    REFRESH_TOKEN_FILE.write_text(f'{tokens["refresh_token"]}\n')
 
-    print("\nRefresh token (save this as the SPOTIFY_REFRESH_TOKEN GitHub secret):")
-    print(tokens["refresh_token"])
+    print(f"\nRefresh token saved to {REFRESH_TOKEN_FILE.name}")
+    print("to upload the token, run this command:")
+    print(f"gh secret set SPOTIFY_REFRESH_TOKEN < {REFRESH_TOKEN_FILE.name}")
+
+    upload = input("Upload the token now? [Y/n] ").strip().lower()
+    if upload in {"", "y", "yes"}:
+        subprocess.run(
+            ["gh", "secret", "set", "SPOTIFY_REFRESH_TOKEN"],
+            input=REFRESH_TOKEN_FILE.read_bytes(),
+            check=True,
+        )
 
 
 if __name__ == "__main__":
